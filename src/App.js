@@ -120,6 +120,7 @@ function App() {
   const [padType, setPadType] = useState('drums');
   const [volume, setVolume] = useState(1);
   const [isSoundOn, setIsSoundOn] = useState(true);
+  const [padColors, setPadColors] = useState({});
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -135,12 +136,26 @@ function App() {
     if (!isSoundOn) return;
     const currentPads = padType === 'drums' ? drumPads : pianoPads;
     const pad = currentPads.find(pad => pad.keyTrigger === selector);
-    
+  
     if (pad) {
       const audio = document.getElementById(selector);
       audio.volume = volume;
       audio.play();
       setActiveKey(pad.id);
+  
+      const padIndex = currentPads.indexOf(pad);
+      const randomColor = getRandomColor();
+      setPadColors((prev) => ({
+        ...prev,
+        [pad.keyTrigger]: randomColor,
+      }));
+  
+      setTimeout(() => {
+        setPadColors((prev) => ({
+          ...prev,
+          [pad.keyTrigger]: '#FFF',
+        }));
+      }, 200);
     }
   }
 
@@ -152,39 +167,48 @@ function App() {
     setPadType((prevType) => (prevType === 'drums' ? 'piano' : 'drums'));
   }
 
+  function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
   const currentPads = padType === 'drums' ? drumPads : pianoPads;
 
   return (
     <div className="App">
       <div id="drum-machine">
-        <div id="display">{activeKey}</div>
 
-        <div className="toggle-container" id="drums">
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={isSoundOn} 
-              onChange={toggleSound} 
-            />
-            <span className="slider sound-toggle"></span>
-          </label>
-          <span>{isSoundOn ? 'Sound On' : 'Sound Off'}</span>
-        </div>
-
-        <div className="toggle-container" id="piano">
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={padType === 'piano'} 
-              onChange={togglePads} 
-            />
-            <span className={`slider ${padType === 'drums' ? 'drum-toggle' : 'piano-toggle'}`}></span>
-          </label>
-          <span>{padType === 'drums' ? 'Switch to Piano' : 'Switch to Drums'}</span>
+        <div className="controls">
+          <div className="toggle-container">
+            <span className="slider-title">{isSoundOn ? 'Power On' : 'Power Off'}</span>
+            <label className="switch">
+              <input 
+                type="checkbox" 
+                checked={isSoundOn} 
+                onChange={toggleSound} 
+              />
+              <span className="slider sound-toggle"></span>
+            </label>
+          </div>
+          <div className="toggle-container">
+            <span className="slider-title">{padType === 'drums' ? 'Heater Kit' : 'Smooth Piano Kit'}</span>
+            <label className="switch">
+              <input 
+                type="checkbox" 
+                checked={padType === 'piano'} 
+                onChange={togglePads} 
+              />
+              <span className={`slider ${padType === 'drums' ? 'drum-toggle' : 'piano-toggle'}`}></span>
+            </label>
+          </div>
         </div>
 
         <div>
-          <label htmlFor="volume-slider">Volume: {Math.round(volume * 100)}%</label>
+          <label htmlFor="volume-slider"><b>Volume </b>{Math.round(volume * 100)}% </label>
           <input 
             id="volume-slider"
             type="range" 
@@ -196,6 +220,8 @@ function App() {
           />
         </div>
 
+        <div id="display">{isSoundOn ? activeKey : ''}</div>
+
         <div className="drum-pads">
           {currentPads.map((pad) => (
             <div 
@@ -203,6 +229,7 @@ function App() {
               onClick={() => playSound(pad.keyTrigger)}  
               className="drum-pad"
               id="trigger"
+              style={{ backgroundColor: padColors[pad.keyTrigger] || '#FFF' }}
             >
               {pad.keyTrigger}
               <audio 
